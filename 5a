@@ -1,0 +1,548 @@
+# ============================================================
+# WEKA KNOWLEDGE FLOW - PYTHON EQUIVALENT
+# Apriori + FP-Growth + J48 + Random Forest + ROC Curves
+# ============================================================
+
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.datasets import load_iris
+from sklearn.model_selection import StratifiedKFold, cross_val_predict
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import (
+    accuracy_score,
+    precision_score,
+    recall_score,
+    confusion_matrix,
+    roc_curve,
+    roc_auc_score
+)
+
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import (
+    apriori,
+    fpgrowth,
+    association_rules
+)
+
+
+# ============================================================
+# PART 1: ASSOCIATION RULE MINING
+# APRIORI AND FP-GROWTH
+# ============================================================
+
+print("\n==============================================")
+print("PART 1 - ASSOCIATION RULE MINING")
+print("==============================================")
+
+
+# Sample supermarket transactions
+transactions = [
+    ["bread", "milk", "butter"],
+    ["bread", "milk"],
+    ["bread", "butter"],
+    ["milk", "butter"],
+    ["bread", "milk", "butter"],
+    ["bread", "milk"],
+    ["milk"],
+    ["bread", "butter"],
+    ["bread", "milk", "butter"],
+    ["milk", "butter"]
+]
+
+
+# ------------------------------------------------------------
+# Convert transactions into one-hot encoded DataFrame
+# ------------------------------------------------------------
+
+te = TransactionEncoder()
+
+transaction_array = te.fit(
+    transactions
+).transform(
+    transactions
+)
+
+data = pd.DataFrame(
+    transaction_array,
+    columns=te.columns_
+)
+
+print("\nOne-Hot Encoded Dataset:")
+print(data)
+
+
+# ============================================================
+# APRIORI
+# ============================================================
+
+print("\n----------------------------------------------")
+print("APRIORI")
+print("----------------------------------------------")
+
+frequent_apriori = apriori(
+    data,
+    min_support=0.2,
+    use_colnames=True
+)
+
+print("\nFrequent Itemsets:")
+print(frequent_apriori)
+
+
+rules_apriori = association_rules(
+    frequent_apriori,
+    metric="confidence",
+    min_threshold=0.6
+)
+
+print("\nApriori Association Rules:")
+
+if len(rules_apriori) > 0:
+
+    print(
+        rules_apriori[
+            [
+                "antecedents",
+                "consequents",
+                "support",
+                "confidence",
+                "lift"
+            ]
+        ]
+    )
+
+else:
+
+    print("No rules found.")
+
+
+# ============================================================
+# FP-GROWTH
+# ============================================================
+
+print("\n----------------------------------------------")
+print("FP-GROWTH")
+print("----------------------------------------------")
+
+frequent_fp = fpgrowth(
+    data,
+    min_support=0.2,
+    use_colnames=True
+)
+
+print("\nFP-Growth Frequent Itemsets:")
+print(frequent_fp)
+
+
+rules_fp = association_rules(
+    frequent_fp,
+    metric="confidence",
+    min_threshold=0.6
+)
+
+print("\nFP-Growth Association Rules:")
+
+if len(rules_fp) > 0:
+
+    print(
+        rules_fp[
+            [
+                "antecedents",
+                "consequents",
+                "support",
+                "confidence",
+                "lift"
+            ]
+        ]
+    )
+
+else:
+
+    print("No rules found.")
+
+
+# ============================================================
+# PART 2: LOAD IRIS DATASET
+# ============================================================
+
+print("\n==============================================")
+print("PART 2 - J48 CROSS VALIDATION")
+print("==============================================")
+
+
+iris = load_iris()
+
+X = iris.data
+y = iris.target
+
+class_names = iris.target_names
+
+
+# ============================================================
+# 10-FOLD CROSS VALIDATION
+# ============================================================
+
+cv = StratifiedKFold(
+    n_splits=10,
+    shuffle=True,
+    random_state=42
+)
+
+
+# ============================================================
+# J48 EQUIVALENT
+# ============================================================
+
+# WEKA J48 ≈ entropy-based Decision Tree
+j48 = DecisionTreeClassifier(
+    criterion="entropy",
+    random_state=42
+)
+
+
+j48_predictions = cross_val_predict(
+    j48,
+    X,
+    y,
+    cv=cv
+)
+
+
+# ============================================================
+# J48 PERFORMANCE
+# ============================================================
+
+j48_accuracy = accuracy_score(
+    y,
+    j48_predictions
+)
+
+j48_precision = precision_score(
+    y,
+    j48_predictions,
+    average="weighted"
+)
+
+j48_recall = recall_score(
+    y,
+    j48_predictions,
+    average="weighted"
+)
+
+j48_matrix = confusion_matrix(
+    y,
+    j48_predictions
+)
+
+
+print("\nJ48 Cross-Validation Results")
+
+print(
+    "Accuracy:",
+    round(j48_accuracy * 100, 2),
+    "%"
+)
+
+print(
+    "Precision:",
+    round(j48_precision, 4)
+)
+
+print(
+    "Recall:",
+    round(j48_recall, 4)
+)
+
+print("\nConfusion Matrix:")
+print(j48_matrix)
+
+
+# ============================================================
+# PART 3: RANDOM FOREST
+# ============================================================
+
+print("\n==============================================")
+print("PART 3 - RANDOM FOREST")
+print("==============================================")
+
+
+random_forest = RandomForestClassifier(
+    n_estimators=100,
+    random_state=42
+)
+
+
+rf_predictions = cross_val_predict(
+    random_forest,
+    X,
+    y,
+    cv=cv
+)
+
+
+rf_accuracy = accuracy_score(
+    y,
+    rf_predictions
+)
+
+rf_precision = precision_score(
+    y,
+    rf_predictions,
+    average="weighted"
+)
+
+rf_recall = recall_score(
+    y,
+    rf_predictions,
+    average="weighted"
+)
+
+rf_matrix = confusion_matrix(
+    y,
+    rf_predictions
+)
+
+
+print("\nRandom Forest Cross-Validation Results")
+
+print(
+    "Accuracy:",
+    round(rf_accuracy * 100, 2),
+    "%"
+)
+
+print(
+    "Precision:",
+    round(rf_precision, 4)
+)
+
+print(
+    "Recall:",
+    round(rf_recall, 4)
+)
+
+print("\nConfusion Matrix:")
+print(rf_matrix)
+
+
+# ============================================================
+# PART 4: ROC CURVES
+# ============================================================
+
+print("\n==============================================")
+print("PART 4 - ROC CURVES")
+print("==============================================")
+
+
+# Cross-validated probabilities
+j48_probabilities = cross_val_predict(
+    j48,
+    X,
+    y,
+    cv=cv,
+    method="predict_proba"
+)
+
+rf_probabilities = cross_val_predict(
+    random_forest,
+    X,
+    y,
+    cv=cv,
+    method="predict_proba"
+)
+
+
+# ============================================================
+# MULTI-CLASS ROC
+# ============================================================
+
+plt.figure(figsize=(8, 6))
+
+
+for i in range(len(class_names)):
+
+    # J48
+    y_binary = (
+        y == i
+    ).astype(int)
+
+    fpr_j48, tpr_j48, _ = roc_curve(
+        y_binary,
+        j48_probabilities[:, i]
+    )
+
+    auc_j48 = roc_auc_score(
+        y_binary,
+        j48_probabilities[:, i]
+    )
+
+    plt.plot(
+        fpr_j48,
+        tpr_j48,
+        label=(
+            f"J48 - {class_names[i]} "
+            f"(AUC={auc_j48:.3f})"
+        )
+    )
+
+
+    # Random Forest
+    fpr_rf, tpr_rf, _ = roc_curve(
+        y_binary,
+        rf_probabilities[:, i]
+    )
+
+    auc_rf = roc_auc_score(
+        y_binary,
+        rf_probabilities[:, i]
+    )
+
+    plt.plot(
+        fpr_rf,
+        tpr_rf,
+        linestyle="--",
+        label=(
+            f"Random Forest - {class_names[i]} "
+            f"(AUC={auc_rf:.3f})"
+        )
+    )
+
+
+# Random classifier line
+plt.plot(
+    [0, 1],
+    [0, 1],
+    linestyle=":"
+)
+
+
+plt.xlabel(
+    "False Positive Rate"
+)
+
+plt.ylabel(
+    "True Positive Rate"
+)
+
+plt.title(
+    "ROC Curves - J48 vs Random Forest"
+)
+
+plt.legend()
+
+plt.grid()
+
+plt.show()
+
+
+# ============================================================
+# PART 5: OVERALL ROC-AUC
+# ============================================================
+
+j48_auc = roc_auc_score(
+    y,
+    j48_probabilities,
+    multi_class="ovr",
+    average="macro"
+)
+
+rf_auc = roc_auc_score(
+    y,
+    rf_probabilities,
+    multi_class="ovr",
+    average="macro"
+)
+
+
+print("\n==============================================")
+print("ROC-AUC RESULTS")
+print("==============================================")
+
+print(
+    "J48 AUC:",
+    round(j48_auc, 4)
+)
+
+print(
+    "Random Forest AUC:",
+    round(rf_auc, 4)
+)
+
+
+# ============================================================
+# PART 6: FINAL COMPARISON
+# ============================================================
+
+print("\n==============================================")
+print("FINAL COMPARISON")
+print("==============================================")
+
+
+comparison = pd.DataFrame({
+    "Algorithm": [
+        "J48",
+        "Random Forest"
+    ],
+
+    "Accuracy": [
+        j48_accuracy,
+        rf_accuracy
+    ],
+
+    "Precision": [
+        j48_precision,
+        rf_precision
+    ],
+
+    "Recall": [
+        j48_recall,
+        rf_recall
+    ],
+
+    "ROC_AUC": [
+        j48_auc,
+        rf_auc
+    ]
+})
+
+
+comparison["Accuracy"] = (
+    comparison["Accuracy"] * 100
+).round(2)
+
+comparison["Precision"] = (
+    comparison["Precision"]
+).round(4)
+
+comparison["Recall"] = (
+    comparison["Recall"]
+).round(4)
+
+comparison["ROC_AUC"] = (
+    comparison["ROC_AUC"]
+).round(4)
+
+
+print(comparison.to_string(index=False))
+
+
+# ============================================================
+# CONCLUSION
+# ============================================================
+
+print("\n==============================================")
+print("CONCLUSION")
+print("==============================================")
+
+print("""
+1. Apriori generated frequent itemsets and association rules.
+2. FP-Growth generated frequent itemsets using an FP-tree approach.
+3. J48 was evaluated using 10-fold cross-validation.
+4. Random Forest was evaluated using 10-fold cross-validation.
+5. Confusion matrices, accuracy, precision and recall were calculated.
+6. ROC curves for J48 and Random Forest were plotted together.
+7. The classifier with higher Accuracy and ROC-AUC
+   can be considered the better-performing model.
+""")
